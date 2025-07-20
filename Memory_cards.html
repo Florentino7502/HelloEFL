@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jobs and Occupations - Memory Game</title>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background-color: #f0f9ff;
+      text-align: center;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1 {
+      color: #005f73;
+    }
+
+    #scoreboard {
+      margin-bottom: 20px;
+    }
+
+    #progressBarContainer {
+      width: 200px;
+      height: 20px;
+      background-color: #ccc;
+      margin: 10px auto;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #progressBar {
+      height: 100%;
+      width: 0%;
+      background-color: #00b4d8;
+      transition: width 0.3s ease-in-out;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(4, 100px);
+      grid-gap: 15px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      width: 100px;
+      height: 100px;
+      background-color: #ade8f4;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      color: transparent;
+      transition: background 0.3s;
+      border: 2px solid #48cae4;
+    }
+
+    .card img {
+      max-width: 70%;
+      max-height: 70%;
+      display: none;
+    }
+
+    .card.flipped {
+      background-color: #90e0ef;
+      color: #03045e;
+    }
+
+    .card.flipped img {
+      display: block;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #0077b6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #023e8a;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Memory Game: Jobs and Occupations</h1>
+  <div id="scoreboard">
+    <p>✅ Matches: <span id="matches">0</span>/8</p>
+    <p>🔁 Attempts: <span id="attempts">0</span></p>
+    <p>⏱️ Time: <span id="timer">0</span> sec</p>
+    <div id="progressBarContainer">
+      <div id="progressBar"></div>
+    </div>
+  </div>
+  
+  <section class="game-board" id="gameBoard"></section>
+
+  <button onclick="resetGame()">🔄 Restart</button>
+
+  <script>
+    const cardsArray = [
+      { name: 'Doctor', img: '👨‍⚕️' },
+      { name: 'Teacher', img: '👩‍🏫' },
+      { name: 'Firefighter', img: '👨‍🚒' },
+      { name: 'Police Officer', img: '👮‍♂️' },
+      { name: 'Chef', img: '👨‍🍳' },
+      { name: 'Farmer', img: '👩‍🌾' },
+      { name: 'Mechanic', img: '🧑‍🔧' },
+      { name: 'Pilot', img: '👩‍✈️' }
+    ];
+
+    let gameBoard = document.getElementById('gameBoard');
+    let matches = 0;
+    let attempts = 0;
+    let firstCard = null;
+    let lockBoard = false;
+    let timerInterval = null;
+    let time = 0;
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        time++;
+        document.getElementById('timer').textContent = time;
+      }, 1000);
+    }
+
+    function updateProgressBar() {
+      const percent = (matches / 8) * 100;
+      document.getElementById('progressBar').style.width = `${percent}%`;
+    }
+
+    function resetGame() {
+      matches = 0;
+      attempts = 0;
+      time = 0;
+      clearInterval(timerInterval);
+      document.getElementById('matches').textContent = matches;
+      document.getElementById('attempts').textContent = attempts;
+      document.getElementById('timer').textContent = time;
+      document.getElementById('progressBar').style.width = '0%';
+      gameBoard.innerHTML = '';
+      setupBoard();
+      startTimer();
+    }
+
+    function setupBoard() {
+      const fullDeck = [...cardsArray, ...cardsArray];
+      const shuffled = fullDeck.sort(() => 0.5 - Math.random());
+
+      shuffled.forEach((card, index) => {
+        const cardElement = document.createElement('div');
+        cardElement.classList.add('card');
+        cardElement.dataset.name = card.name;
+        cardElement.innerHTML = `<span>${card.img}</span>`;
+        cardElement.addEventListener('click', flipCard);
+        gameBoard.appendChild(cardElement);
+      });
+    }
+
+    function flipCard() {
+      if (lockBoard || this.classList.contains('flipped')) return;
+
+      this.classList.add('flipped');
+      this.innerHTML = `<span>${this.dataset.name}</span>`;
+
+      if (!firstCard) {
+        firstCard = this;
+        return;
+      }
+
+      attempts++;
+      document.getElementById('attempts').textContent = attempts;
+
+      if (firstCard.dataset.name === this.dataset.name && firstCard !== this) {
+        matches++;
+        document.getElementById('matches').textContent = matches;
+        updateProgressBar();
+        firstCard.removeEventListener('click', flipCard);
+        this.removeEventListener('click', flipCard);
+        firstCard = null;
+
+        if (matches === 8) {
+          clearInterval(timerInterval);
+          setTimeout(() => alert('🎉 ¡Felicidades! Has encontrado todas las ocupaciones.'), 500);
+        }
+      } else {
+        lockBoard = true;
+        setTimeout(() => {
+          firstCard.classList.remove('flipped');
+          this.classList.remove('flipped');
+          firstCard.innerHTML = `<span>${cardsArray.find(c => c.name === firstCard.dataset.name).img}</span>`;
+          this.innerHTML = `<span>${cardsArray.find(c => c.name === this.dataset.name).img}</span>`;
+          firstCard = null;
+          lockBoard = false;
+        }, 1000);
+      }
+    }
+
+    window.onload = () => {
+      setupBoard();
+      startTimer();
+    };
+  </script>
+</body>
+</html>
